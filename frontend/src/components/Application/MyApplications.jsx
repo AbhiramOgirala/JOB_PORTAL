@@ -12,16 +12,12 @@ const MyApplications = () => {
   const [applications, setApplications] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [resumeImageUrl, setResumeImageUrl] = useState("");
-  const [viewMode, setViewMode] = useState('modal'); // 'modal', 'direct', or 'pdfjs'
+  const [viewMode, setViewMode] = useState('modal'); // Only using 'modal' now
 
   const { isAuthorized } = useContext(Context);
   const navigateTo = useNavigate();
 
-  const toggleViewMode = () => {
-    if (viewMode === 'modal') setViewMode('direct');
-    else if (viewMode === 'direct') setViewMode('pdfjs');
-    else setViewMode('modal');
-  };
+  // Remove the toggleViewMode function since we're not switching between views anymore
 
   useEffect(() => {
     try {
@@ -129,41 +125,7 @@ const MyApplications = () => {
         </div>
       )}
       {modalOpen && (
-        <>
-          {viewMode === 'modal' ? (
-            <ResumeModal imageUrl={resumeImageUrl} onClose={closeModal} />
-          ) : viewMode === 'direct' ? (
-            <div className="resume-modal">
-              <div className="modal-content">
-                <span className="close" onClick={closeModal}>
-                  &times;
-                </span>
-                <button 
-                  className="view-mode-toggle" 
-                  onClick={toggleViewMode}
-                >
-                  Switch to Object View
-                </button>
-                <PDFViewer pdfUrl={resumeImageUrl} />
-              </div>
-            </div>
-          ) : (
-            <div className="resume-modal">
-              <div className="modal-content">
-                <span className="close" onClick={closeModal}>
-                  &times;
-                </span>
-                <button 
-                  className="view-mode-toggle" 
-                  onClick={toggleViewMode}
-                >
-                  Switch to Modal View
-                </button>
-                <PDFJSViewer pdfUrl={resumeImageUrl} />
-              </div>
-            </div>
-          )}
-        </>
+        <ResumeModal imageUrl={resumeImageUrl} onClose={closeModal} />
       )}
     </section>
   );
