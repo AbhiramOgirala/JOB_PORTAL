@@ -4,15 +4,24 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import ResumeModal from "./ResumeModal";
+import PDFViewer from './PDFViewer';
+import PDFJSViewer from './PDFJSViewer';
 
 const MyApplications = () => {
   const { user } = useContext(Context);
   const [applications, setApplications] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [resumeImageUrl, setResumeImageUrl] = useState("");
+  const [viewMode, setViewMode] = useState('modal'); // 'modal', 'direct', or 'pdfjs'
 
   const { isAuthorized } = useContext(Context);
   const navigateTo = useNavigate();
+
+  const toggleViewMode = () => {
+    if (viewMode === 'modal') setViewMode('direct');
+    else if (viewMode === 'direct') setViewMode('pdfjs');
+    else setViewMode('modal');
+  };
 
   useEffect(() => {
     try {
@@ -60,6 +69,7 @@ const MyApplications = () => {
   };
 
   const openModal = (imageUrl) => {
+    console.log("Opening modal with URL:", imageUrl);
     setResumeImageUrl(imageUrl);
     setModalOpen(true);
   };
@@ -119,7 +129,41 @@ const MyApplications = () => {
         </div>
       )}
       {modalOpen && (
-        <ResumeModal imageUrl={resumeImageUrl} onClose={closeModal} />
+        <>
+          {viewMode === 'modal' ? (
+            <ResumeModal imageUrl={resumeImageUrl} onClose={closeModal} />
+          ) : viewMode === 'direct' ? (
+            <div className="resume-modal">
+              <div className="modal-content">
+                <span className="close" onClick={closeModal}>
+                  &times;
+                </span>
+                <button 
+                  className="view-mode-toggle" 
+                  onClick={toggleViewMode}
+                >
+                  Switch to Object View
+                </button>
+                <PDFViewer pdfUrl={resumeImageUrl} />
+              </div>
+            </div>
+          ) : (
+            <div className="resume-modal">
+              <div className="modal-content">
+                <span className="close" onClick={closeModal}>
+                  &times;
+                </span>
+                <button 
+                  className="view-mode-toggle" 
+                  onClick={toggleViewMode}
+                >
+                  Switch to Modal View
+                </button>
+                <PDFJSViewer pdfUrl={resumeImageUrl} />
+              </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
@@ -129,56 +173,44 @@ export default MyApplications;
 
 const JobSeekerCard = ({ element, deleteApplication, openModal }) => {
   return (
-    <>
-      <div className="job_seeker_card">
-        <div className="detail">
-          <p>
-            <span>Name:</span> {element.name}
-          </p>
-          <p>
-            <span>Email:</span> {element.email}
-          </p>
-          <p>
-            <span>Phone:</span> {element.phone}
-          </p>
-          <p>
-            <span>Address:</span> {element.address}
-          </p>
-          <p>
-            <span>CoverLetter:</span> {element.coverLetter}
-          </p>
-          <p className="status-display">
-            <span>Application Status:</span>
-            <span className={`status ${element.status}`}>
-              {element.status.charAt(0).toUpperCase() + element.status.slice(1)}
-            </span>
-          </p>
-        </div>
-        <div className="resume">
-          {element.resume.url.endsWith('.pdf') ? (
-            <div 
-              className="pdf-thumbnail" 
-              onClick={() => openModal(element.resume.url)}
-            >
-              <span>View PDF Resume</span>
-            </div>
-          ) : (
-            <img
-              src={element.resume.url}
-              alt="resume"
-              onClick={() => openModal(element.resume.url)}
-            />
-          )}
-        </div>
-        {element.status === "pending" && (
-          <div className="btn_area">
-            <button onClick={() => deleteApplication(element._id)}>
-              Delete Application
-            </button>
-          </div>
-        )}
+    <div className="job_seeker_card">
+      {/* Left section - Applicant info */}
+      <div className="applicant-info">
+        <p><span>Name:</span> {element.name}</p>
+        <p><span>Email:</span> {element.email}</p>
+        <p><span>Phone:</span> {element.phone}</p>
+        <p><span>Address:</span> {element.address}</p>
+        <p><span>CoverLetter:</span> {element.coverLetter}</p>
+        <p className="status-display">
+          <span>Application Status:</span>
+          <span className={`status ${element.status}`}>
+            {element.status.charAt(0).toUpperCase() + element.status.slice(1)}
+          </span>
+        </p>
       </div>
-    </>
+      
+      {/* Middle section - View PDF button */}
+      <div className={`resume-section ${element.status !== "pending" ? "right-aligned" : ""}`}>
+        <div 
+          className="pdf-thumbnail" 
+          onClick={() => openModal(element.resume.url)}
+        >
+          View PDF Resume
+        </div>
+      </div>
+      
+      {/* Right section - Delete button (only for pending) */}
+      {element.status === "pending" && (
+        <div className="action-section">
+          <button 
+            className="delete-btn"
+            onClick={() => deleteApplication(element._id)}
+          >
+            Delete Application
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -203,66 +235,49 @@ const EmployerCard = ({ element, openModal }) => {
   };
 
   return (
-    <>
-      <div className="job_seeker_card">
-        <div className="detail">
-          <p>
-            <span>Name:</span> {element.name}
-          </p>
-          <p>
-            <span>Email:</span> {element.email}
-          </p>
-          <p>
-            <span>Phone:</span> {element.phone}
-          </p>
-          <p>
-            <span>Address:</span> {element.address}
-          </p>
-          <p>
-            <span>CoverLetter:</span> {element.coverLetter}
-          </p>
-          {/* Only show status if it's accepted or rejected */}
-          {status !== "pending" && (
-            <p>
-              <span>Status:</span>{" "}
-              <span className={`status ${status}`}>{status}</span>
-            </p>
-          )}
-        </div>
-        <div className="resume">
-          {element.resume.url.endsWith('.pdf') ? (
-            <div 
-              className="pdf-thumbnail" 
-              onClick={() => openModal(element.resume.url)}
-            >
-              <span>View PDF Resume</span>
-            </div>
-          ) : (
-            <img
-              src={element.resume.url}
-              alt="resume"
-              onClick={() => openModal(element.resume.url)}
-            />
-          )}
-        </div>
-        <div className="status_actions">
-          {/* Always show Accept/Reject buttons */}
-          <button
-            className="accept_btn"
-            onClick={() => handleStatusUpdate("accepted")}
-            disabled={status === "accepted"}
-          >
-            Accept
-          </button>
-          <button
-            className="reject_btn"
-            onClick={() => handleStatusUpdate("rejected")}
-            disabled={status === "rejected"}
-          >
-            Reject
-          </button>
+    <div className="job_seeker_card">
+      {/* Left section - Applicant info */}
+      <div className="applicant-info">
+        <p><span>Name:</span> {element.name}</p>
+        <p><span>Email:</span> {element.email}</p>
+        <p><span>Phone:</span> {element.phone}</p>
+        <p><span>Address:</span> {element.address}</p>
+        <p><span>CoverLetter:</span> {element.coverLetter}</p>
+        <p className="status-display">
+          <span>Application Status:</span>
+          <span className={`status ${status}`}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </span>
+        </p>
+      </div>
+      
+      {/* Middle section - View PDF button */}
+      <div className="resume-section">
+        <div 
+          className="pdf-thumbnail" 
+          onClick={() => openModal(element.resume.url)}
+        >
+          View PDF Resume
         </div>
       </div>
-    </>
+      
+      {/* Right section - Action buttons */}
+      <div className="action-section">
+        <button 
+          onClick={() => handleStatusUpdate("accepted")}
+          className={status === "accepted" ? "accept-btn active" : "accept-btn"}
+          disabled={status === "accepted"}
+        >
+          Accept
+        </button>
+        <button 
+          onClick={() => handleStatusUpdate("rejected")}
+          className={status === "rejected" ? "reject-btn active" : "reject-btn"}
+          disabled={status === "rejected"}
+        >
+          Reject
+        </button>
+      </div>
+    </div>
   );
 };

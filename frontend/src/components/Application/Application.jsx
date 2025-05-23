@@ -95,18 +95,19 @@ const Application = () => {
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
           />
-          <div>
-            <label
-              style={{ textAlign: "start", display: "block", fontSize: "20px" }}
-            >
+          <div className="resume">
+            <label>
               Select Resume (PDF)
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                style={{ width: "100%" }}
+              />
             </label>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handleFileChange}
-              style={{ width: "100%" }}
-            />
+            <small className="file-hint">
+              For best results, upload a PDF file. Maximum size: 5MB.
+            </small>
           </div>
           <button type="submit">Send Application</button>
         </form>

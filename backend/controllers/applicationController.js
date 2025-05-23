@@ -25,16 +25,24 @@ export const postApplication = catchAsyncErrors(async (req, res, next) => {
 
   try {
     const cloudinaryResponse = await cloudinary.v2.uploader.upload(
-      resume.tempFilePath
+      resume.tempFilePath,
+      {
+        resource_type: "raw", // Use "raw" for PDF files
+        folder: "resumes",
+        public_id: `resume_${Date.now()}`, // Ensure unique filename
+        use_filename: false,
+        unique_filename: true,
+        overwrite: true,
+        type: "upload"
+      }
     );
 
-    if (!cloudinaryResponse || cloudinaryResponse.error) {
-      console.error(
-        "Cloudinary Error:",
-        cloudinaryResponse.error || "Unknown Cloudinary error"
-      );
-      return next(new ErrorHandler("Failed to upload Resume to Cloudinary", 500));
-    }
+    // Log the response for debugging
+    console.log("Cloudinary upload response:", JSON.stringify(cloudinaryResponse, null, 2));
+
+    // Make sure to use the secure_url from the response
+    const resumeUrl = cloudinaryResponse.secure_url;
+    
     const { name, email, coverLetter, phone, address, jobId } = req.body;
     const applicantID = {
       user: req.user._id,
